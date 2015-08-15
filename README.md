@@ -1,3 +1,45 @@
+# Upgrade `@param`s to CoffeeScript 1.9.0+
+
+CoffeeScript versions prior to 1.9.0 accidentally allowed this:
+
+```coffee
+class Person
+  constructor: (@name) ->
+    console.log(name)
+```
+
+In CoffeeScript 1.9.0+ the above will throw a `ReferenceError` since you’re
+trying to log an undefined variable. The correct way to write it is:
+
+```coffee
+class Person
+  constructor: (@name) ->
+    console.log(@name)
+```
+
+In other words, you used to be able to access `@param`s without the `@`, but
+cannot anymore.
+
+This mod of the CoffeeScript compiler `console.error`s each occurance where you
+are missing a `@`.
+
+To install it:
+
+```sh
+npm install lydell/coffee-script#1.8-at-params-warn
+```
+
+To check a file for missing `@`s, run for example:
+
+```sh
+./node_modules/.bin/coffee -p file-to-check.coffee >/dev/null
+```
+
+Fix all warnings and then you should be good to go to upgrade to CoffeeScript
+1.9.0+!
+
+Orignal CoffeeScript README:
+
             {
          }   }   {
         {   {  }  }

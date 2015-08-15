@@ -1443,6 +1443,36 @@ exports.Code = class Code extends Base
     answer = answer.concat(@makeCode("\n"), @body.compileWithDeclarations(o), @makeCode("\n#{@tab}")) unless @body.isEmpty()
     answer.push @makeCode '}'
 
+    @eachParamName (name, node) ->
+      return unless name.charAt(0) is '@'
+      inParamList = no
+      lastFnStart = null
+      waitUntil = null
+      for fragment, index in answer
+        if waitUntil
+          continue unless fragment.locationData and
+                 fragment.locationData.first_line >= waitUntil.last_line and
+                 fragment.locationData.first_column >= waitUntil.last_column
+          waitUntil = null
+          inParamList = no
+        if /^function.*\($/.test fragment.code
+          inParamList = yes
+          lastFnStart = fragment
+          continue
+        else if fragment.code is ') {'
+          inParamList = no
+          continue
+        if inParamList and fragment.type is 'Literal' and fragment.code is name[1..]
+          waitUntil = lastFnStart.locationData
+          continue
+        last = answer[index - 1]
+        next = answer[index + 1]
+        continue if inParamList or last?.type is 'Access' or next?.code is ': ' or
+                    (last?.type is 'Assign' and last?.locationData is undefined)
+        if fragment.type is 'Literal' and fragment.code is name[1..]
+          {first_line: line, first_column: column} = fragment.locationData
+          console.error("#{o.filename}:#{line + 1}:#{column + 1}: Rename #{fragment.code} to #{name}")
+
     return [@makeCode(@tab), answer...] if @ctor
     if @front or (o.level >= LEVEL_ACCESS) then @wrapInBraces answer else answer
 
